@@ -8,6 +8,8 @@
 #define MIN_VEL -5
 #define MAX_VEL 5
 
+#define BOID_SIZE 5
+
 class Boid {
 public:
 	Boid();
@@ -34,7 +36,7 @@ private:
 	Vector2 separation(const std::vector <Boid>& boids);
 
 	void avoid();
-	enum BoidState { STANDBY, ROAMING, SEEKING } state;
+	enum BoidState { STANDBY, FLOCKING, EXPLORING, SEEKING } state;
 
 	Vector2 seek(const Vector2& target);
 	void edge();
@@ -51,7 +53,7 @@ Boid::Boid() {
 						(float)GetRandomValue(StartArea.y, StartArea.height) };
 	this->velocity = { (float)GetRandomValue(MIN_VEL, MAX_VEL), (float)GetRandomValue(MIN_VEL, MAX_VEL) };
 	this->acceleration = { 1.0, 1.0 };
-	this->state = ROAMING;
+	this->state = FLOCKING;
 	return;
 }
 
@@ -61,22 +63,24 @@ Boid::~Boid() {
 
 
 void Boid::update(const std::vector <Boid>& boids, const Weight& boidWeights) {
-	Vector2 aligmentForce = alignment(boids);
-	Vector2 cohesionForce = cohesion(boids);
-	Vector2 separationForce = separation(boids);
-
-	this->acceleration = Vector2Add(acceleration, Vector2Scale(aligmentForce, boidWeights.alignment));
-	this->acceleration = Vector2Add(acceleration, Vector2Scale(cohesionForce, boidWeights.cohesion));
-	this->acceleration = Vector2Add(acceleration, Vector2Scale(separationForce, boidWeights.seperation));
-
+	
 	switch (state) {
 	case STANDBY:
 		return;
 		break;
-	case ROAMING:
-		break;
 	case SEEKING:
-		//seek();
+		Vector2 seekingForce = seek(GlobalData::getInstance().getMouseRel());
+		this->acceleration = Vector2Add(acceleration, Vector2Scale(seekingForce, 10) );
+	case FLOCKING:
+		Vector2 aligmentForce = alignment(boids);
+		Vector2 cohesionForce = cohesion(boids);
+		Vector2 separationForce = separation(boids);
+
+		this->acceleration = Vector2Add(acceleration, Vector2Scale(aligmentForce, boidWeights.alignment));
+		this->acceleration = Vector2Add(acceleration, Vector2Scale(cohesionForce, boidWeights.cohesion));
+		this->acceleration = Vector2Add(acceleration, Vector2Scale(separationForce, boidWeights.seperation));
+		break;
+	case EXPLORING:
 		break;
 	}
 	this->acceleration = Vector2Scale(acceleration, 0.4);
@@ -85,13 +89,14 @@ void Boid::update(const std::vector <Boid>& boids, const Weight& boidWeights) {
 	this->position = Vector2Add(position, velocity);
 	this->acceleration = Vector2Scale(acceleration, 0);
 
+	avoid();
 	edge();
 	return;
 }
 
 Vector2 Boid::alignment(const std::vector <Boid>& boids) {
 	
-	float perception = 25; // Field of vision
+	float perception = 5 * BOID_SIZE; // Field of vision
 	Vector2 steering = { 0.0, 0.0 }; //Steering force
 	int totalSurroundingBoids = 0;
 
@@ -107,16 +112,16 @@ Vector2 Boid::alignment(const std::vector <Boid>& boids) {
 	}
 	if (totalSurroundingBoids > 0) {
 		steering = Vector2Scale(steering, 1.0/(float)totalSurroundingBoids);
-		steering = Vector2Scale(steering, 2);
+		steering = Vector2Scale(steering, MAX_VEL);
 		steering = Vector2Subtract(steering, this->velocity);
-		steering = Vector2ClampValue(steering, -0.2, 0.2);
+		steering = Vector2ClampValue(steering, -0.5, 0.5);
 	}
 	return steering;
 }
 
 Vector2 Boid::cohesion(const std::vector <Boid>& boids) {
 
-	float perception = 50;
+	float perception = 10 * BOID_SIZE;
 	Vector2 steering = { 0.0, 0.0 };
 	int totalSurroundingBoids = 0;
 
@@ -141,15 +146,17 @@ Vector2 Boid::seek(const Vector2& target) {
 	Vector2 steering = { 0.0, 0.0 };
 	Vector2 distance = Vector2Subtract(target, position);
 	
+
+	steering = Vector2Scale(steering, MAX_VEL);
 	steering = Vector2Subtract(distance, velocity);
-	steering = Vector2ClampValue(steering, -0.2, 0.2);
+	steering = Vector2ClampValue(steering, -0.1, 0.1);
 	return steering;
 }
 
 
 Vector2 Boid::separation(const std::vector <Boid>& boids) {
 	Vector2 steering = { 0.0, 0.0 };
-	float perception = 24;
+	float perception = 5 * BOID_SIZE;
 	int totalSurroundingBoids = 0;
 
 	for (const Boid& otherboid : boids) {
@@ -165,13 +172,17 @@ Vector2 Boid::separation(const std::vector <Boid>& boids) {
 	}
 	if (totalSurroundingBoids > 0) {
 		steering = Vector2Scale(steering, 1.0 / (float)totalSurroundingBoids);
-		steering = Vector2Scale(steering, 2);
+		steering = Vector2Scale(steering, MAX_VEL);
 		steering = Vector2Subtract(steering, this->velocity);
 		steering = Vector2ClampValue(steering, -0.2, 0.2);
 	}
 	return steering;
 }
+void Boid::avoid() {
 
+
+	return;
+}
 void Boid::edge() {
 	World::Area borders = GridPosToPixelPos(World::getInstance().getMap());
 	if (position.x < borders.x) position.x += borders.width;
@@ -181,7 +192,7 @@ void Boid::edge() {
 }
 
 void Boid::render() {
-	DrawCircle(position.x , position.y , 5, GREEN);
+	DrawCircle(position.x , position.y , BOID_SIZE, ORANGE);
 	//debug();
 	return;
 }

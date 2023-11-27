@@ -58,12 +58,12 @@ void WorldMenu::renderImGui() {
 		ImGui::BeginChild("Area", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2), true);
 
 		ImGui::PushItemWidth(this->elementsize());
-		
-		ImGui::SliderInt("Start Width", &(world.getStartArea().width), 1, (world.getMap().width));
-		ImGui::SliderInt("Start Height", &(world.getStartArea().height), 1, (world.getMap().width));
 
-		ImGui::SliderInt("Search Width", &(world.getSearchArea().width), 1, (world.getMap().width));
-		ImGui::SliderInt("Search Height", &(world.getSearchArea().height),1, (world.getMap().width));
+		ImGui::SliderInt("Map Width", &(world.getMap().width), 1, 20);
+		ImGui::SliderInt("Map Height", &(world.getMap().height),1, 20);
+		
+		ImGui::SliderInt("Border", &(world.getStartSearchBorder()), 1, (world.getMap().width));
+
 
 		ImGui::EndChild();
 

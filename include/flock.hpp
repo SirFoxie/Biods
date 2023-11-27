@@ -58,7 +58,7 @@ void Flock::render() {
 	for (Boid& boid : Boids) {
 		boid.render();
 	}
-	debug();
+	//debug();
 	return;
 }
 

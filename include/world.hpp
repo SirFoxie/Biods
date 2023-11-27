@@ -30,9 +30,11 @@ public:
 	Area& getMap() { return Map; }
 	Area& getStartArea() { return StartArea; }
 	Area& getSearchArea() { return SearchArea; }
+	int& getStartSearchBorder() { return StartSearchBorder; }
 	TileType checkTileType(int xPos, int yPos);
 
 	void handleInputs();
+	void update();
 	void render();
 private:
 	World() {};
@@ -41,6 +43,8 @@ private:
 	Area Map;
 	Area StartArea;
 	Area SearchArea;
+
+	int StartSearchBorder = 6;
 
 	std::vector<std::vector<TileType>> Tile2DGrid;	// 2d Grid array
 	//unsigned char *tileFog;
@@ -55,10 +59,10 @@ private:
 
 void World::setWorldDims(int _startX, int _startY,  int _width, int _height ) {
 	Map = { _startX, _startY, _width , _height };
-	StartArea = { Map.x, Map.y, 6 , Map.height };
-	SearchArea = { (Map.x + StartArea.width), Map.y, (Map.width-StartArea.width), Map.height, };
+	StartArea = { Map.x, Map.y, StartSearchBorder , Map.height };
+	SearchArea = { (Map.x + StartSearchBorder), Map.y, (Map.width- StartSearchBorder), Map.height, };
 	Area TileMap = { Map.x, Map.y, Map.width, Map.height };
-	this->Tile2DGrid.resize(TileMap.height, std::vector<TileType>(TileMap.width, TileType::OOB));
+	this->Tile2DGrid.resize(TileMap.width, std::vector<TileType>(TileMap.height, TileType::OOB));
 
 	return;
 }
@@ -101,8 +105,8 @@ void World::drawArea() {
 }
 
 void World::drawMaze() {
-	for (int i = SearchArea.x; i < (Map.width); ++i) {
-		for (int j = SearchArea.y; j < (Map.height); ++j) {
+	for (int i = SearchArea.x; i < SearchArea.width; ++i) {
+		for (int j = SearchArea.y; j < SearchArea.height; ++j) {
 			if (Tile2DGrid[i][j] == WALL_1) {
 				DrawRectangle(i*CELL_SIZE, j *CELL_SIZE, CELL_SIZE, CELL_SIZE, BLACK);
 			}
@@ -122,7 +126,13 @@ void World::handleInputs() {
 	return;
 }
 
+void World::update() {
+	this->setWorldDims(Map.x, Map.y, Map.width, Map.height);
+	return;
+}
+
 void World::render() {
+	this->update();
 	this->drawArea();
 	this->drawMaze();
 	if (isPlacingWalls) {

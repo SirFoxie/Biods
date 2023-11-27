@@ -66,13 +66,13 @@ void FlockMenu::renderImGui() {
 
 	switch (selectedSubTab) {
 	case 0: {
-		ImGui::BeginChild("Population", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2), true);
+		ImGui::BeginChild("Population", ImVec2(ImGui::GetContentRegionAvail().x, 120), true);
 
 		ImGui::PushItemWidth(this->elementsize());
 		ImGui::SliderInt("Population", &newFlockSize, 0, 500);
 		ImGui::SliderFloat("Alignment", &(flock.weights().alignment), 0.0, 2.0);
 		ImGui::SliderFloat("Cohesion", &(flock.weights().cohesion), 0.0, 2.0);
-		ImGui::SliderFloat("Seperation", &(flock.weights().seperation), 0.0, 2.0);
+		ImGui::SliderFloat("Seperation", &(flock.weights().seperation), 0.0, 5.0);
 		ImGui::EndChild();
 
 		ImGui::Spacing();
